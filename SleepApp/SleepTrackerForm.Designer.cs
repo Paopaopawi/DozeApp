@@ -1,6 +1,6 @@
 ﻿namespace SleepApp
 {
-    partial class AlarmPopupForm
+    partial class SleepTrackerForm
     {
         /// <summary>
         /// Required designer variable.
@@ -30,13 +30,13 @@
         {
             this.SuspendLayout();
             // 
-            // AlarmPopupForm
+            // SleepTracker
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Name = "AlarmPopupForm";
-            this.Load += new System.EventHandler(this.AlarmPopupForm_Load);
+            this.Name = "SleepTracker";
+            this.Text = "SleepTracker";
             this.ResumeLayout(false);
 
         }

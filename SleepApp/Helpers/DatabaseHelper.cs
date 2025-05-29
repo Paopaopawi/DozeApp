@@ -40,13 +40,15 @@ namespace SleepApp.Helpers
                         IsEnabled INTEGER
                     );
 
-                    CREATE TABLE IF NOT EXISTS SleepSessions (
+                   CREATE TABLE IF NOT EXISTS SleepSessions (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
                         UserId INTEGER,
-                        StartTime TEXT,
-                        EndTime TEXT,
-                        DurationMinutes INTEGER
-                    );
+    StartTime TEXT,
+    EndTime TEXT,
+    DurationMinutes INTEGER
+);
+
+
                 ";
 
                 cmd.ExecuteNonQuery();

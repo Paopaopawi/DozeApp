@@ -2,21 +2,24 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using MetroFramework;
 using MetroFramework.Controls;
 using MetroFramework.Forms;
-using System.Media;
 
 namespace SleepApp
 {
     public partial class AlarmForm : MetroForm
     {
-        private string dbPath = "Data Source=sleepapp.db;";
+        private MetroLink linkAlarm;
+        private MetroLink linkSleep;
         private FlowLayoutPanel flpAlarms;
         private Button btnAddAlarm;
         private Timer timerCheckAlarms;
         private List<Alarm> alarms = new List<Alarm>();
+        private MetroLink linkLogout;
+        private readonly string dbPath = "Data Source=sleepapp.db;";
 
         public AlarmForm()
         {
@@ -28,55 +31,99 @@ namespace SleepApp
 
         private void InitializeMetroUI()
         {
-            // Material dark theme palette
-            Color background = ColorTranslator.FromHtml("#121212");
-            Color surface = ColorTranslator.FromHtml("#1E1E1E");
-            Color primary = ColorTranslator.FromHtml("#BB86FC");
-            Color secondary = ColorTranslator.FromHtml("#03DAC6");
-            Color onPrimary = ColorTranslator.FromHtml("#000000");
-            Color onBackground = ColorTranslator.FromHtml("#FFFFFF");
-            Color onSurface = ColorTranslator.FromHtml("#FFFFFF");
-            Color error = ColorTranslator.FromHtml("#CF6679");
-
-            var styleManager = new MetroFramework.Components.MetroStyleManager();
-            styleManager.Owner = this;
+            var styleManager = new MetroFramework.Components.MetroStyleManager { Owner = this };
             styleManager.Theme = MetroThemeStyle.Dark;
             styleManager.Style = MetroColorStyle.Purple;
-            this.StyleManager = styleManager;
-            this.Theme = MetroThemeStyle.Dark;
-            this.Style = MetroColorStyle.Purple;
+            StyleManager = styleManager;
 
-            this.Text = "Doze";
-            this.Width = 500;
-            this.Height = 600;
-            this.BackColor = background;
-            this.ForeColor = onBackground;
+            BackColor = ColorTranslator.FromHtml("#121212");
+            ForeColor = ColorTranslator.FromHtml("#FFFFFF");
+            Text = "Doze";
+
+            Width = 500;
+            Height = 600;
+
+            var pnlNav = new Panel
+            {
+                Height = 40,
+                Dock = DockStyle.Top,
+                BackColor = ColorTranslator.FromHtml("#1E1E1E")
+            };
+
+            linkAlarm = new MetroLink
+            {
+                Text = "Alarm",
+                Location = new Point(20, 10),
+                Theme = MetroThemeStyle.Dark,
+                UseCustomForeColor = true,
+                ForeColor = ColorTranslator.FromHtml("#BB86FC")
+            };
+            linkAlarm.Click += (s, e) => OpenAlarmForm();
+
+            linkSleep = new MetroLink
+            {
+                Text = "Sleep Tracker",
+                Location = new Point(100, 10),
+                Theme = MetroThemeStyle.Dark,
+                UseCustomForeColor = true,
+                ForeColor = ColorTranslator.FromHtml("#FFFFFF")
+            };
+            linkSleep.Click += (s, e) => OpenSleepTrackerForm();
+
+            linkLogout = new MetroLink
+            {
+                Text = "Logout",
+                Location = new Point(200, 10),
+                Theme = MetroThemeStyle.Dark,
+                UseCustomForeColor = true,
+                ForeColor = ColorTranslator.FromHtml("#FFFFFF"),
+                Cursor = Cursors.Hand
+            };
+            linkLogout.Click += (s, e) => Logout();
+
+            pnlNav.Controls.Add(linkLogout);
+            pnlNav.Controls.Add(linkAlarm);
+            pnlNav.Controls.Add(linkSleep);
+            Controls.Add(pnlNav);
 
             btnAddAlarm = new Button
             {
                 Text = "Add Alarm",
-                Location = new Point(20, 80),
+                Location = new Point(20, 110),
                 Width = 280,
                 Height = 40,
-                BackColor = primary,
-                ForeColor = onPrimary,
+                BackColor = ColorTranslator.FromHtml("#BB86FC"),
+                ForeColor = ColorTranslator.FromHtml("#000000"),
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 12, FontStyle.Bold)
             };
             btnAddAlarm.FlatAppearance.BorderSize = 0;
             btnAddAlarm.Click += BtnAddAlarm_Click;
-            this.Controls.Add(btnAddAlarm);
+            Controls.Add(btnAddAlarm);
 
             flpAlarms = new FlowLayoutPanel
             {
-                Location = new Point(20, 130),
-                Size = new Size(440, 400),
+                Location = new Point(20, 180),
+                Size = new Size(440, 360),
                 AutoScroll = true,
                 FlowDirection = FlowDirection.TopDown,
                 WrapContents = false,
-                BackColor = background
+                BackColor = BackColor
             };
-            this.Controls.Add(flpAlarms);
+            Controls.Add(flpAlarms);
+        }
+
+        private void OpenAlarmForm()
+        {
+            linkAlarm.ForeColor = ColorTranslator.FromHtml("#BB86FC");
+            linkSleep.ForeColor = ColorTranslator.FromHtml("#FFFFFF");
+        }
+
+        private void OpenSleepTrackerForm()
+        {
+            var tracker = new SleepTrackerForm();
+            tracker.Show();
+            this.Hide();
         }
 
         private void LoadAlarms()
@@ -87,35 +134,37 @@ namespace SleepApp
             using (var conn = new SQLiteConnection(dbPath))
             {
                 conn.Open();
-                string sql = "SELECT Id, Time, IsEnabled FROM Alarms ORDER BY Time";
+
+                string sql = "SELECT Id, UserId, Time, IsEnabled FROM Alarms WHERE UserId = @userId ORDER BY Time";
                 using (var cmd = new SQLiteCommand(sql, conn))
-                using (var reader = cmd.ExecuteReader())
                 {
-                    while (reader.Read())
+                    cmd.Parameters.AddWithValue("@userId", Session.LoggedInUserId);
+
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        alarms.Add(new Alarm
+                        while (reader.Read())
                         {
-                            Id = reader.GetInt64(0),
-                            Time = reader.GetString(1),
-                            IsEnabled = reader.GetInt32(2) == 1
-                        });
+                            alarms.Add(new Alarm
+                            {
+                                Id = reader.GetInt64(0),
+                                UserId = reader.GetInt32(1),
+                                Time = reader.GetString(2),
+                                IsEnabled = reader.GetInt32(3) == 1
+                            });
+                        }
                     }
                 }
             }
 
             foreach (var alarm in alarms)
-            {
                 AddAlarmControl(alarm);
-            }
         }
 
         private void AddAlarmControl(Alarm alarm)
         {
-            Color surface = ColorTranslator.FromHtml("#1E1E1E");
-            Color onSurface = ColorTranslator.FromHtml("#FFFFFF");
-            Color primary = ColorTranslator.FromHtml("#BB86FC");
-            Color secondary = ColorTranslator.FromHtml("#03DAC6");
-            Color error = ColorTranslator.FromHtml("#CF6679");
+            var surface = ColorTranslator.FromHtml("#1E1E1E");
+            var onSurface = ColorTranslator.FromHtml("#FFFFFF");
+            var error = ColorTranslator.FromHtml("#CF6679");
 
             var panel = new Panel
             {
@@ -127,16 +176,15 @@ namespace SleepApp
 
             var lblTime = new MetroLabel
             {
-                Text = ConvertTo12HourFormat(alarm.Time),  // Convert to 12-hour AM/PM
+                Text = ConvertTo12HourFormat(alarm.Time),
                 Location = new Point(10, 10),
                 AutoSize = true,
                 FontSize = MetroLabelSize.Tall,
                 ForeColor = onSurface,
                 Theme = MetroThemeStyle.Dark,
-                UseCustomBackColor = true,       // To avoid white bg on label
+                UseCustomBackColor = true,
                 BackColor = Color.Transparent
             };
-
 
             var toggleEnable = new MetroToggle
             {
@@ -165,16 +213,17 @@ namespace SleepApp
             panel.Controls.Add(lblTime);
             panel.Controls.Add(toggleEnable);
             panel.Controls.Add(btnDelete);
-
             flpAlarms.Controls.Add(panel);
         }
+
         private string ConvertTo12HourFormat(string time24)
         {
-            if (DateTime.TryParseExact(time24, "HH:mm", null, System.Globalization.DateTimeStyles.None, out DateTime dt))
+            if (DateTime.TryParseExact(time24, "HH:mm", null,
+                System.Globalization.DateTimeStyles.None, out var dt))
             {
-                return dt.ToString("hh:mm tt"); // e.g. "02:30 PM"
+                return dt.ToString("hh:mm tt");
             }
-            return time24; // fallback to original if parse fails
+            return time24;
         }
 
         private void BtnAddAlarm_Click(object sender, EventArgs e)
@@ -190,20 +239,20 @@ namespace SleepApp
                         using (var conn = new SQLiteConnection(dbPath))
                         {
                             conn.Open();
-                            string insert = "INSERT INTO Alarms (Time, IsEnabled) VALUES (@time, 1)";
+                            string insert = "INSERT INTO Alarms (UserId, Time, IsEnabled) VALUES (@userId, @time, 1)";
                             using (var cmd = new SQLiteCommand(insert, conn))
                             {
+                                cmd.Parameters.AddWithValue("@userId", Session.LoggedInUserId);
                                 cmd.Parameters.AddWithValue("@time", time);
                                 cmd.ExecuteNonQuery();
                             }
                         }
                         LoadAlarms();
-                        CustomMessageBoxForm.Show("Alarm added!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information, this);
-
+                        MessageBox.Show("Alarm added!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
                     {
-                        CustomMessageBoxForm.Show($"Failed to add alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Failed to add alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
@@ -219,18 +268,19 @@ namespace SleepApp
                 using (var conn = new SQLiteConnection(dbPath))
                 {
                     conn.Open();
-                    string update = "UPDATE Alarms SET IsEnabled = @enabled WHERE Id = @id";
+                    string update = "UPDATE Alarms SET IsEnabled = @enabled WHERE Id = @id AND UserId = @userId";
                     using (var cmd = new SQLiteCommand(update, conn))
                     {
                         cmd.Parameters.AddWithValue("@enabled", enabled ? 1 : 0);
                         cmd.Parameters.AddWithValue("@id", id);
+                        cmd.Parameters.AddWithValue("@userId", Session.LoggedInUserId);
                         cmd.ExecuteNonQuery();
                     }
                 }
             }
             catch (Exception ex)
             {
-                CustomMessageBoxForm.Show($"Failed to update alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Failed to update alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -239,7 +289,7 @@ namespace SleepApp
             var btn = sender as Button;
             long id = (long)btn.Tag;
 
-            var result = CustomMessageBoxForm.Show("Delete this alarm?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question, this);
+            var result = MessageBox.Show("Delete this alarm?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (result == DialogResult.Yes)
             {
                 try
@@ -247,10 +297,11 @@ namespace SleepApp
                     using (var conn = new SQLiteConnection(dbPath))
                     {
                         conn.Open();
-                        string del = "DELETE FROM Alarms WHERE Id = @id";
+                        string del = "DELETE FROM Alarms WHERE Id = @id AND UserId = @userId";
                         using (var cmd = new SQLiteCommand(del, conn))
                         {
                             cmd.Parameters.AddWithValue("@id", id);
+                            cmd.Parameters.AddWithValue("@userId", Session.LoggedInUserId);
                             cmd.ExecuteNonQuery();
                         }
                     }
@@ -258,7 +309,7 @@ namespace SleepApp
                 }
                 catch (Exception ex)
                 {
-                    CustomMessageBoxForm.Show($"Failed to delete alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Failed to delete alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -273,13 +324,14 @@ namespace SleepApp
         private void TimerCheckAlarms_Tick(object sender, EventArgs e)
         {
             string now = DateTime.Now.ToString("HH:mm");
+
             foreach (var alarm in alarms)
             {
                 if (alarm.IsEnabled && alarm.Time == now)
                 {
                     timerCheckAlarms.Stop();
                     ShowAlarmPopup(alarm);
-                    break;
+                    return;
                 }
             }
         }
@@ -290,11 +342,7 @@ namespace SleepApp
             {
                 var result = popup.ShowDialog();
 
-                if (result == DialogResult.OK)
-                {
-                    SnoozeAlarm(alarm);
-                }
-                else
+                if (result != DialogResult.OK)
                 {
                     DisableAlarm(alarm);
                 }
@@ -302,31 +350,6 @@ namespace SleepApp
             timerCheckAlarms.Start();
         }
 
-        private void SnoozeAlarm(Alarm alarm)
-        {
-            DateTime snoozedTime = DateTime.ParseExact(alarm.Time, "HH:mm", null).AddMinutes(5);
-            string newTime = snoozedTime.ToString("HH:mm");
-
-            try
-            {
-                using (var conn = new SQLiteConnection(dbPath))
-                {
-                    conn.Open();
-                    string update = "UPDATE Alarms SET Time = @time WHERE Id = @id";
-                    using (var cmd = new SQLiteCommand(update, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@time", newTime);
-                        cmd.Parameters.AddWithValue("@id", alarm.Id);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-                LoadAlarms();
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBoxForm.Show($"Failed to snooze alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
 
         private void DisableAlarm(Alarm alarm)
         {
@@ -335,10 +358,11 @@ namespace SleepApp
                 using (var conn = new SQLiteConnection(dbPath))
                 {
                     conn.Open();
-                    string update = "UPDATE Alarms SET IsEnabled = 0 WHERE Id = @id";
+                    string update = "UPDATE Alarms SET IsEnabled = 0 WHERE Id = @id AND UserId = @userId";
                     using (var cmd = new SQLiteCommand(update, conn))
                     {
                         cmd.Parameters.AddWithValue("@id", alarm.Id);
+                        cmd.Parameters.AddWithValue("@userId", Session.LoggedInUserId);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -346,15 +370,27 @@ namespace SleepApp
             }
             catch (Exception ex)
             {
-                CustomMessageBoxForm.Show($"Failed to disable alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Failed to disable alarm: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void Logout()
+        {
+            Session.LoggedInUserId = 0;
+            Session.LoggedInUsername = null;
+
+            LoginForm loginForm = new LoginForm();
+            loginForm.Show();
+            this.Close();
         }
     }
 
     public class Alarm
     {
         public long Id { get; set; }
+        public int UserId { get; set; }
         public string Time { get; set; }
         public bool IsEnabled { get; set; }
     }
+
 }
