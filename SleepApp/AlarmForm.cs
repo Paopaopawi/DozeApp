@@ -18,6 +18,7 @@ namespace SleepApp
         private Button btnAddAlarm;
         private Timer timerCheckAlarms;
         private List<Alarm> alarms = new List<Alarm>();
+        private System.Media.SoundPlayer alarmPlayer;
         private MetroLink linkLogout;
         private readonly string dbPath = "Data Source=sleepapp.db;";
 
@@ -50,30 +51,33 @@ namespace SleepApp
                 BackColor = ColorTranslator.FromHtml("#1E1E1E")
             };
 
+            linkSleep = new MetroLink
+            {
+                Text = "Sleep Tracker",
+                Location = new Point(20, 10),
+                Theme = MetroThemeStyle.Dark,
+                Width = 110,
+                UseCustomForeColor = true,
+                ForeColor = ColorTranslator.FromHtml("#FFFFFF")
+            };
+
             linkAlarm = new MetroLink
             {
                 Text = "Alarm",
-                Location = new Point(20, 10),
+                Location = new Point(140, 10),
+                Width = 70,
                 Theme = MetroThemeStyle.Dark,
                 UseCustomForeColor = true,
                 ForeColor = ColorTranslator.FromHtml("#BB86FC")
             };
             linkAlarm.Click += (s, e) => OpenAlarmForm();
 
-            linkSleep = new MetroLink
-            {
-                Text = "Sleep Tracker",
-                Location = new Point(100, 10),
-                Theme = MetroThemeStyle.Dark,
-                UseCustomForeColor = true,
-                ForeColor = ColorTranslator.FromHtml("#FFFFFF")
-            };
-            linkSleep.Click += (s, e) => OpenSleepTrackerForm();
 
+            linkSleep.Click += (s, e) => OpenSleepTrackerForm();
             linkLogout = new MetroLink
             {
                 Text = "Logout",
-                Location = new Point(200, 10),
+                Location = new Point(220, 10),
                 Theme = MetroThemeStyle.Dark,
                 UseCustomForeColor = true,
                 ForeColor = ColorTranslator.FromHtml("#FFFFFF"),
@@ -338,9 +342,21 @@ namespace SleepApp
 
         private void ShowAlarmPopup(Alarm alarm)
         {
+            try
+            {
+                alarmPlayer = new System.Media.SoundPlayer("C:/Users/My Computer/source/repos/SleepApp/SleepApp/alarm/alarm.wav");
+                alarmPlayer.PlayLooping();  // plays sound repeatedly until stopped
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to play alarm sound: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
             using (var popup = new AlarmPopupForm(alarm))
             {
                 var result = popup.ShowDialog();
+
+                alarmPlayer.Stop(); // stop sound when popup closes
 
                 if (result != DialogResult.OK)
                 {
@@ -349,6 +365,7 @@ namespace SleepApp
             }
             timerCheckAlarms.Start();
         }
+
 
 
         private void DisableAlarm(Alarm alarm)
@@ -382,6 +399,11 @@ namespace SleepApp
             LoginForm loginForm = new LoginForm();
             loginForm.Show();
             this.Close();
+        }
+
+        private void AlarmForm_Load(object sender, EventArgs e)
+        {
+
         }
     }
 

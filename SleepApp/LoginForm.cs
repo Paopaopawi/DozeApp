@@ -147,7 +147,7 @@ namespace SleepApp
 
                                 MessageBox.Show("Login successful!");
                                 this.Hide();
-                                new AlarmForm().Show();
+                                new SleepTrackerForm().Show();
                             }
                             else
                             {

@@ -30,13 +30,14 @@
         {
             this.SuspendLayout();
             // 
-            // SleepTracker
+            // SleepTrackerForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Name = "SleepTracker";
+            this.Name = "SleepTrackerForm";
             this.Text = "SleepTracker";
+            this.Load += new System.EventHandler(this.SleepTrackerForm_Load);
             this.ResumeLayout(false);
 
         }

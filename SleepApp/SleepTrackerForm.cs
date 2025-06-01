@@ -74,30 +74,33 @@ namespace SleepApp
                 Dock = DockStyle.Top,
                 BackColor = ColorTranslator.FromHtml("#1E1E1E")
             };
+            linkSleep = new MetroLink
+            {
+                Text = "Sleep Tracker",
+                Location = new Point(20, 10),
+                Theme = MetroThemeStyle.Dark,
+                Width = 110,
+                UseCustomForeColor = true,
+                ForeColor = ColorTranslator.FromHtml("#BB86FC")
+            };
 
             linkAlarm = new MetroLink
             {
                 Text = "Alarm",
-                Location = new Point(20, 10),
+                Location = new Point(140, 10),
+                Width = 70,
                 Theme = MetroThemeStyle.Dark,
                 UseCustomForeColor = true,
                 ForeColor = ColorTranslator.FromHtml("#FFFFFF")
             };
             linkAlarm.Click += (s, e) => OpenAlarmForm();
 
-            linkSleep = new MetroLink
-            {
-                Text = "Sleep Tracker",
-                Location = new Point(100, 10),
-                Theme = MetroThemeStyle.Dark,
-                UseCustomForeColor = true,
-                ForeColor = ColorTranslator.FromHtml("#BB86FC")
-            };
+           
             linkSleep.Click += (s, e) => OpenSleepTrackerForm();
             linkLogout = new MetroLink
             {
                 Text = "Logout",
-                Location = new Point(200, 10),
+                Location = new Point(220, 10),
                 Theme = MetroThemeStyle.Dark,
                 UseCustomForeColor = true,
                 ForeColor = ColorTranslator.FromHtml("#FFFFFF"),
@@ -566,6 +569,10 @@ namespace SleepApp
             this.Close();
 }
 
+        private void SleepTrackerForm_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 
 }
